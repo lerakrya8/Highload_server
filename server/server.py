@@ -1,4 +1,5 @@
 from server.handler import MyHandler
+from consts import config
 
 import socket
 import os
@@ -11,19 +12,17 @@ class Server:
         self.socket = None
         self.workers = []
 
-        self.host = "0.0.0.0"
-        self.port = 81
-        self.limit_connection = 500
-        self.limit_threads = 4
+        self.host = config.HOST
+        self.port = config.PORT
+        self.limit_connection = config.LIMIT_CONNECTIONS
+        self.limit_threads = config.LIMIT_THREADS
 
     def run(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         tp = (self.host, self.port)
         self.socket.bind(tp)
         self.socket.listen(self.limit_connection)
-        # logging.log('start listen socket')
 
         for thread in range(self.limit_threads):
             pid = os.fork()

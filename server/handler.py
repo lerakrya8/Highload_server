@@ -2,6 +2,7 @@ from urllib.parse import unquote
 
 from context.request import Request
 from context.response import Response
+from consts import constants
 import os
 
 
@@ -20,51 +21,39 @@ class MyHandler:
         print(data)
         request = Request(data)
 
-        if request.method not in ['GET', 'HEAD']:
-            resp = Response()
-            resp.set_status('405 NotAllowed')
-            resp.generate_headers()
-            sock.sendall(resp.encode())
+        if request.method not in constants.ALLOWED_METHODS:
+            self.create_response(constants.STATUS_NOT_ALLOWED, sock)
             return
 
         if not request.ok:
-            resp = Response()
-            resp.set_status('400 Bad Response')
-            resp.generate_headers()
-            sock.sendall(resp.encode())
+            self.create_response(constants.STATUS_BAD_RESPONSE, sock)
             return
 
         if '/../' in request.path:
-            resp = Response()
-            resp.set_status('403 Forbidden')
-            resp.generate_headers()
-            sock.sendall(resp.encode())
+            self.create_response(constants.STATUS_FORBIDDEN, sock)
             return
 
-        print(request.path)
         request.path = unquote(request.path.split('?')[0])
-        print(request.path)
 
         request.path = os.getcwd() + request.path
         if os.path.isdir(request.path):
             request.path += 'index.html'
             if not os.path.isfile(request.path):
-                resp = Response()
-                resp.set_status('403 Forbidden')
-                resp.generate_headers()
-                sock.sendall(resp.encode())
-
+                self.create_response(constants.STATUS_FORBIDDEN, sock)
         try:
             body = self.read_file(request.path)
         except Exception:
-            resp = Response()
-            resp.set_status('404 NotFound')
-            resp.generate_headers()
-            sock.sendall(resp.encode())
+            self.create_response(constants.STATUS_NOTFOUND, sock)
             return
 
+        self.create_response(constants.STATUS_OK, sock, body, request.path, request.method)
+
+    def create_response(self, status, sock, body='', path='', method=''):
         resp = Response()
-        resp.set_status('200 OK')
-        resp.set_params(body, request.path, request.method)
+        resp.set_status(status)
+
+        if status == constants.STATUS_OK:
+            resp.set_params(body, path, method)
+
         resp.generate_headers()
         sock.sendall(resp.encode())
