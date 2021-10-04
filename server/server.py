@@ -15,7 +15,7 @@ class Server:
         self.host = config.HOST
         self.port = config.PORT
         self.limit_connection = config.LIMIT_CONNECTIONS
-        self.limit_threads = config.LIMIT_THREADS
+        self.limit_forks = config.LIMIT_FORKS
 
     def run(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,7 +24,7 @@ class Server:
         self.socket.bind(tp)
         self.socket.listen(self.limit_connection)
 
-        for thread in range(self.limit_threads):
+        for thread in range(self.limit_forks):
             pid = os.fork()
 
             if pid != 0:
